@@ -1,4 +1,7 @@
-# Ardalan Plaza — Mental Vision (pitch handoff)
+# Ardalan Plaza — Mental Vision **V2** (iteration sandbox)
+
+> **This is the V2 iteration branch.** Original pitch handoff lives on `main` and at the ChatGPT site.
+> Iterate here. Do not merge to `main` until Corey says so.
 
 **Public repo for ChatGPT / Codex / Claude.** This is the independent 3D presentation world for Ardalan Plaza, Carmel, Indiana — ready to fold into the multimedia pitch.
 
@@ -7,8 +10,10 @@
 ## Give this link to another model
 
 ```
-https://github.com/coreyagraphy/ardalan-plaza-mental-vision
+https://github.com/coreyagraphy/ardalan-plaza-mental-vision/tree/v2
 ```
+
+Live V2 preview: https://ardalan-plaza-v2.netlify.app
 
 Paste `CODEX_PROMPT.md` as the task. Read `SITE_GEOMETRY.md` before changing massing.
 
@@ -38,6 +43,7 @@ Published sources (appearance / location only — do not treat as a survey):
 | `SITE_GEOMETRY.md` | Corner, scale, coordinates (estimated) |
 | `PITCH_IMPLEMENTATION.md` | How to drop this into the multimedia pitch |
 | `src/plaza/` | Live 3D world (R3F). Do **not** import `@react-three/drei` |
+| `website/` | Standalone Vite app + prebuilt `dist/` |
 
 ## Hard rules for any downstream model
 
@@ -46,3 +52,12 @@ Published sources (appearance / location only — do not treat as a survey):
 3. Scale is **estimated** from ~8,000 sf first floor. Label it. Do not claim a survey.
 4. No tenant logos. No “approved plan” language.
 5. Official Studio M / Skender stills are **reference only**. Do not republish them as if they were this model.
+
+## V2 workshop lenses (`#businesses`)
+
+Named businesses are discussion lenses, not tenants:
+
+- Morning coffee — Indie Coffee Roasters — Carmel Main
+- Family dining — Bub’s Burgers & Ice Cream — Carmel
+- Evening dining — Juniper on Main — Carmel
+- Art / retail — Indiana Artisan Gifts & Gallery — Carmel Rangeline

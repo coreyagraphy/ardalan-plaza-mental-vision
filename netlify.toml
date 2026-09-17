@@ -1,0 +1,15 @@
+# V2 iteration site — https://ardalan-plaza-v2.netlify.app
+# Publish the prebuilt website bundle so the 3D world is live without a local build.
+[build]
+  base = "website"
+  command = "npm install && npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
