@@ -1,4 +1,5 @@
 import { LABEL } from "./plaza/config";
+import { MovePad } from "./plaza/MovePad";
 import { usePlaza, type CameraId, type LightingId } from "./plaza/store";
 
 const VIEWS: { id: CameraId; label: string }[] = [
@@ -21,8 +22,8 @@ export function SimpleHUD() {
         <h1>3D world</h1>
         <p className="hint">
           {mode === "walk"
-            ? "Click the scene, then WASD to walk · mouse to look"
-            : "Drag to look · Scroll to zoom · Right-drag to pan"}
+            ? "Click the scene to look · arrows or WASD to walk"
+            : "Drag to look · arrows or WASD to move · scroll to zoom"}
         </p>
       </header>
       <nav>
@@ -50,7 +51,11 @@ export function SimpleHUD() {
           </button>
         ))}
       </nav>
-      <p className="legal">{LABEL}</p>
+      <MovePad />
+      <p className="legal">
+        {LABEL}
+        <strong> Corey Ellis / CoreyAgraphy</strong>
+      </p>
     </div>
   );
 }

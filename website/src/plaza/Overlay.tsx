@@ -1,5 +1,7 @@
 import { useEffect, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { BUSINESS, LABEL, SOURCE_PLATE } from "./config";
+import { wireKeyboard } from "./input";
+import { MovePad } from "./MovePad";
 import { usePlaza, type CameraId, type LightingId, type OverlayMode, type ScenarioId } from "./store";
 
 const CAM_BTNS: { id: CameraId; label: string }[] = [
@@ -61,7 +63,7 @@ function WipeHandle({ value }: { value: number }) {
 
   return (
     <div
-      className="wipe-bar"
+      className="wipe-bar hit"
       role="slider"
       aria-label="Wipe between reconstruction and published exterior"
       aria-valuemin={0}
@@ -122,6 +124,7 @@ export function Overlay() {
   const caption = captionFor(camera, mode);
 
   useEffect(() => {
+    wireKeyboard();
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement) return;
       const st = usePlaza.getState();
@@ -155,13 +158,13 @@ export function Overlay() {
     <div className="overlay">
       <SourcePlate />
       <header className="topbar">
-        <div>
+        <div className="brand hit">
           <p className="eyebrow">People &nbsp;|&nbsp; Place &nbsp;|&nbsp; Possibility</p>
           <h1>Ardalan</h1>
           <p className="sub">{caption}</p>
-          <p className="hint">Drag to look · Scroll to zoom · Right-drag to pan</p>
+          <p className="hint">Drag to look · Arrows or WASD to move · Scroll to zoom</p>
         </div>
-        <div className="top-actions">
+        <div className="top-actions hit">
           <button
             type="button"
             className="text-btn"
@@ -172,7 +175,7 @@ export function Overlay() {
         </div>
       </header>
 
-      <nav className="view-row" aria-label="Presentation views">
+      <nav className="view-row hit" aria-label="Presentation views">
         {CAM_BTNS.slice(0, 5).map((c) => (
           <Chip
             key={c.id}
@@ -194,7 +197,7 @@ export function Overlay() {
       )}
 
       {panelOpen && (
-        <aside className="panel">
+        <aside className="panel hit">
           <section>
             <h2>Lighting</h2>
             <div className="row">
@@ -337,7 +340,7 @@ export function Overlay() {
       )}
 
       {showSources && (
-        <div className="sources">
+        <div className="sources hit">
           <h2>Evidence hierarchy</h2>
           <ol>
             <li>District vision composite — presentation mood, not a surveyed plan.</li>
@@ -362,14 +365,15 @@ export function Overlay() {
         </div>
       )}
 
-      <p className="place-mark">Carmel, Indiana — redevelopment in progress</p>
+      <MovePad />
 
       <footer className="foot">
-        <span>{LABEL}</span>
-        <span>Corey Ellis / CoreyAgraphy</span>
-        {mode === "walk" && <span>Click to look · WASD to walk · Shift to hurry</span>}
-        {filmPlaying && <span>Film {filmT.toFixed(1)}s / 20s</span>}
-        {camera === "source" && overlay > 0.98 && <span>Published Studio M exterior</span>}
+        <span className="foot-line">{LABEL}</span>
+        <span className="foot-by">Corey Ellis / CoreyAgraphy · Carmel, Indiana</span>
+        {mode === "walk" && <span className="foot-tip">Click the scene to look · WASD or arrows to walk</span>}
+        {mode !== "walk" && <span className="foot-tip">Arrows move the view · drag looks around</span>}
+        {filmPlaying && <span className="foot-tip">Film {filmT.toFixed(1)}s / 20s</span>}
+        {camera === "source" && overlay > 0.98 && <span className="foot-tip">Published Studio M exterior</span>}
       </footer>
     </div>
   );

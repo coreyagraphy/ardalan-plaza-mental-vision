@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls as OrbitControlsImpl } from "three/examples/jsm/controls/OrbitControls.js";
+import { Vector3, MOUSE } from "three";
 import { ArdalanBuilding } from "./building";
 import { CameraRig } from "./FilmRig";
 import { District } from "./district";
@@ -14,6 +15,7 @@ import { WalkController } from "./WalkController";
 import { usePlazaMaterials } from "./materials";
 import { usePlaza } from "./store";
 import { CAMERAS } from "./config";
+import { moveAxis, wireKeyboard } from "./input";
 
 function SceneBody() {
   const mats = usePlazaMaterials();
@@ -48,7 +50,7 @@ function SceneBody() {
 }
 
 function CaptureBridge() {
-  const { gl, scene } = useThree();
+  const { gl, scene, camera } = useThree();
   useEffect(() => {
     window.__plaza = {
       setFilmT: (t) => usePlaza.setState({ filmT: t, mode: "film", filmPlaying: false }),
@@ -63,13 +65,7 @@ function CaptureBridge() {
         }),
       reset: () => usePlaza.getState().reset(),
       setLighting: (l) => usePlaza.setState({ lighting: l }),
-      setCamera: (c) =>
-        usePlaza.setState({
-          camera: c as never,
-          mode: "orbit",
-          filmPlaying: false,
-          overlay: c === "source" ? 1 : 0,
-        }),
+      setCamera: (c) => usePlaza.getState().setCamera(c as never),
       setScenario: (c) => usePlaza.setState({ scenario: c as never }),
       setShade: (v) => usePlaza.setState({ shade: v }),
       setOverlay: (v) => usePlaza.setState({ overlay: v, camera: "source", mode: "orbit" }),
@@ -77,6 +73,7 @@ function CaptureBridge() {
       setSplat: () => usePlaza.setState({ splat: false }),
       splatEngine: "off",
       captureCanvas: () => gl.domElement,
+      getCam: () => ({ x: camera.position.x, y: camera.position.y, z: camera.position.z }),
       exportGLB: async () => {
         const { GLTFExporter } = await import("three/addons/exporters/GLTFExporter.js");
         const exporter = new GLTFExporter();
@@ -101,7 +98,7 @@ function CaptureBridge() {
     return () => {
       delete window.__plaza;
     };
-  }, [gl, scene]);
+  }, [gl, scene, camera]);
   return null;
 }
 
@@ -110,6 +107,10 @@ function OrbitRig() {
   const controls = useRef<OrbitControlsImpl | null>(null);
   const snapId = usePlaza((s) => s.snapId);
   const cameraId = usePlaza((s) => s.camera);
+  const pan = useRef(new Vector3());
+  useEffect(() => {
+    wireKeyboard();
+  }, []);
   useEffect(() => {
     const c = new OrbitControlsImpl(camera, gl.domElement);
     c.enableDamping = true;
@@ -118,7 +119,13 @@ function OrbitRig() {
     c.maxDistance = 160;
     c.maxPolarAngle = Math.PI / 2 - 0.04;
     c.enablePan = true;
-    c.screenSpacePanning = false;
+    c.screenSpacePanning = true;
+    c.panSpeed = 1.1;
+    c.rotateSpeed = 0.72;
+    c.zoomSpeed = 0.85;
+    c.mouseButtons.LEFT = MOUSE.ROTATE;
+    c.mouseButtons.MIDDLE = MOUSE.DOLLY;
+    c.mouseButtons.RIGHT = MOUSE.PAN;
     const t = cameraId in CAMERAS ? CAMERAS[cameraId as keyof typeof CAMERAS].target : CAMERAS.establishing.target;
     c.target.set(t[0], t[1], t[2]);
     controls.current = c;
@@ -135,7 +142,28 @@ function OrbitRig() {
       c.target.set(t[0], t[1], t[2]);
     }
   }, [snapId, cameraId]);
-  useFrame(() => controls.current?.update());
+  useFrame((_, dt) => {
+    const c = controls.current;
+    if (!c) return;
+    const { x: ax, z: az, moving } = moveAxis();
+    if (moving) {
+      const eye = camera.position;
+      const tgt = c.target;
+      const fx = tgt.x - eye.x;
+      const fz = tgt.z - eye.z;
+      const flen = Math.hypot(fx, fz) || 1;
+      const fX = fx / flen;
+      const fZ = fz / flen;
+      const rX = fZ;
+      const rZ = -fX;
+      const speed = 22 * Math.min(dt, 0.1);
+      // Left/right follow the view: right button moves the scene the way you look right.
+      pan.current.set((fX * az + rX * -ax) * speed, 0, (fZ * az + rZ * -ax) * speed);
+      eye.add(pan.current);
+      tgt.add(pan.current);
+    }
+    c.update();
+  });
   return null;
 }
 

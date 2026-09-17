@@ -1,34 +1,25 @@
 import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { PerspectiveCamera } from "three";
+import { isHeld, moveAxis, setHeld, wireKeyboard } from "./input";
 import { usePlaza } from "./store";
 
 /**
  * Eye-level walk: FPS strafe (controls skill §2a).
  * W/+forward, S/−forward, D/+right, A/−right. Mouse look when pointer-locked.
+ * On-screen arrows drive the same axis.
  */
 export function WalkController() {
   const mode = usePlaza((s) => s.mode);
   const active = mode === "walk";
   const { camera, gl } = useThree();
-  const keys = useRef(new Set<string>());
   const yaw = useRef(usePlaza.getState().walkYaw);
   const pitch = useRef(-0.08);
   const pos = useRef({ x: usePlaza.getState().walkX, z: usePlaza.getState().walkZ });
   const locked = useRef(false);
 
   useEffect(() => {
-    const down = (e: KeyboardEvent) => keys.current.add(e.code);
-    const up = (e: KeyboardEvent) => keys.current.delete(e.code);
-    const blur = () => keys.current.clear();
-    window.addEventListener("keydown", down);
-    window.addEventListener("keyup", up);
-    window.addEventListener("blur", blur);
-    return () => {
-      window.removeEventListener("keydown", down);
-      window.removeEventListener("keyup", up);
-      window.removeEventListener("blur", blur);
-    };
+    wireKeyboard();
   }, []);
 
   useEffect(() => {
@@ -58,13 +49,8 @@ export function WalkController() {
   useEffect(() => {
     const probe = {
       getYaw: () => yaw.current,
-      getSpeed: () => {
-        const k = keys.current;
-        return k.has("KeyW") || k.has("KeyS") || k.has("KeyA") || k.has("KeyD") ? 1 : 0;
-      },
-      setKeys: (codes: string[]) => {
-        keys.current = new Set(codes);
-      },
+      getSpeed: () => (moveAxis().moving ? 1 : 0),
+      setKeys: (codes: string[]) => setHeld(codes),
     };
     window.__controlsTest = probe;
     return () => {
@@ -75,31 +61,17 @@ export function WalkController() {
   useFrame((_, dt) => {
     if (!active) return;
     const d = Math.min(dt, 0.1);
-    const k = keys.current;
+    const { x: ax, z: az } = moveAxis();
     const forward = { x: -Math.sin(yaw.current), z: -Math.cos(yaw.current) };
     const right = { x: Math.cos(yaw.current), z: -Math.sin(yaw.current) };
-    let mx = 0;
-    let mz = 0;
-    if (k.has("KeyW") || k.has("ArrowUp")) {
-      mx += forward.x;
-      mz += forward.z;
-    }
-    if (k.has("KeyS") || k.has("ArrowDown")) {
-      mx -= forward.x;
-      mz -= forward.z;
-    }
-    if (k.has("KeyD") || k.has("ArrowRight")) {
-      mx += right.x;
-      mz += right.z;
-    }
-    if (k.has("KeyA") || k.has("ArrowLeft")) {
-      mx -= right.x;
-      mz -= right.z;
-    }
+    let mx = forward.x * az + right.x * ax;
+    let mz = forward.z * az + right.z * ax;
     const len = Math.hypot(mx, mz) || 1;
-    const speed = k.has("ShiftLeft") ? 5.4 : 2.8;
-    pos.current.x += (mx / len) * speed * d;
-    pos.current.z += (mz / len) * speed * d;
+    const speed = isHeld("ShiftLeft") ? 5.4 : 2.8;
+    if (ax !== 0 || az !== 0) {
+      pos.current.x += (mx / len) * speed * d;
+      pos.current.z += (mz / len) * speed * d;
+    }
     pos.current.x = Math.max(-70, Math.min(80, pos.current.x));
     pos.current.z = Math.max(-42, Math.min(55, pos.current.z));
     const x = pos.current.x;
@@ -146,6 +118,7 @@ declare global {
       setSplat?: (v: boolean) => void;
       splatEngine?: string;
       captureCanvas: () => HTMLCanvasElement | null;
+      getCam?: () => { x: number; y: number; z: number };
       exportGLB?: () => Promise<ArrayBuffer>;
     };
   }
